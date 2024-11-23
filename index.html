@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>학생 데이터 관리</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container mt-4">
+        <h1>학생 데이터 관리</h1>
+        <button id="btnStu" class="btn btn-primary mb-2">모든 학생 데이터 가져오기</button>
+        <button id="openAddModal" class="btn btn-success mb-2" data-toggle="modal" data-target="#addModal">학생 데이터 추가</button>
+        <h2>학생 데이터 삭제</h2>
+        <div class="mb-3">
+            <label for="deleteId">학생 ID</label>
+            <input type="text" id="deleteId" class="form-control" placeholder="ID 입력" required />
+            <button id="btnDelete" class="btn btn-danger mt-2">삭제</button>
+        </div>
+        <div id="contents" class="mt-4"></div>
+    </div>
+
+    <!-- 데이터 추가 모달 -->
+    <div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-labelledby="addModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addModalLabel">학생 데이터 추가</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <label for="name">이름</label>
+                    <input type="text" id="name" class="form-control" placeholder="이름" required />
+                    <label for="age">나이</label>
+                    <input type="number" id="age" class="form-control" placeholder="나이" required />
+                    <label for="city">거주지</label>
+                    <input type="text" id="city" class="form-control" placeholder="거주지" required />
+                    <label for="birthMonth">태어난 달</label>
+                    <select id="birthMonth" class="form-control" required>
+                        <option value="">선택</option>
+                        <option value="January">1월</option>
+                        <option value="February">2월</option>
+                        <option value="March">3월</option>
+                        <option value="April">4월</option>
+                        <option value="May">5월</option>
+                        <option value="June">6월</option>
+                        <option value="July">7월</option>
+                        <option value="August">8월</option>
+                        <option value="September">9월</option>
+                        <option value="October">10월</option>
+                        <option value="November">11월</option>
+                        <option value="December">12월</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">닫기</button>
+                    <button type="button" class="btn btn-primary" id="btnAdd">추가</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const apiBaseURL = "https://67281923270bd0b9755456e8.mockapi.io/api/v1/users";
+
+        function fetchStudents() {
+            const contents = document.getElementById("contents");
+            contents.innerHTML = '<div class="spinner-border text-primary" role="status"></div>';
+            fetch(apiBaseURL)
+                .then(response => response.json())
+                .then(data => {
+                    contents.innerHTML = `
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>이름</th>
+                                    <th>나이</th>
+                                    <th>거주지</th>
+                                    <th>태어난 달</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.map(student => `
+                                    <tr>
+                                        <td>${student.id}</td>
+                                        <td>${student.name}</td>
+                                        <td>${student.age}</td>
+                                        <td>${student.city}</td>
+                                        <td>${student.birthMonth || "정보 없음"}</td>
+                                    </tr>
+                                `).join("")}
+                            </tbody>
+                        </table>`;
+                })
+                .catch(error => console.error("데이터 가져오기 오류:", error));
+        }
+
+        function addStudent() {
+            const name = document.getElementById("name").value.trim();
+            const age = document.getElementById("age").value.trim();
+            const city = document.getElementById("city").value.trim();
+            const birthMonth = document.getElementById("birthMonth").value;
+
+            if (!name || !age || !city || !birthMonth) {
+                alert("모든 필드를 입력해주세요.");
+                return;
+            }
+
+            fetch(apiBaseURL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, age: parseInt(age), city, birthMonth })
+            }).then(() => {
+                fetchStudents();
+                $('#addModal').modal('hide');
+            }).catch(error => console.error("학생 추가 오류:", error));
+        }
+
+        function deleteStudent() {
+            const id = document.getElementById("deleteId").value.trim();
+            if (!id) {
+                alert("ID를 입력해주세요.");
+                return;
+            }
+            if (confirm("정말 삭제하시겠습니까?")) {
+                fetch(`${apiBaseURL}/${id}`, { method: "DELETE" })
+                    .then(() => fetchStudents())
+                    .catch(error => console.error("학생 삭제 오류:", error));
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById("btnStu").addEventListener("click", fetchStudents);
+            document.getElementById("btnAdd").addEventListener("click", addStudent);
+            document.getElementById("btnDelete").addEventListener("click", deleteStudent);
+        });
+    </script>
+</body>
+
+</html>
